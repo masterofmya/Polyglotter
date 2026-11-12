@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lingo Lobby</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#2b2d42; --card:#ffffff; --accent:#ff8a3d; --muted:#6b6f80; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; overflow:hidden; background:#bfe6ff; font-family:'Nunito', system-ui, sans-serif; color:var(--ink); }
+  #game canvas { display:block; }
+
+  /* Start screen */
+  #start { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,#bfe6ff,#ffe3c2); z-index:30; padding:16px; }
+  .card { background:var(--card); border-radius:24px; padding:28px; width:100%; max-width:400px; box-shadow:0 10px 0 rgba(0,0,0,.08), 0 20px 40px rgba(0,0,0,.12); }
+  h1 { margin:0 0 4px; font-size:40px; font-weight:900; letter-spacing:-1px; }
+  h1 span { color:var(--accent); }
+  .tag { margin:0 0 20px; color:var(--muted); font-weight:600; }
+  label { display:block; font-weight:800; margin:14px 0 6px; font-size:14px; }
+  input[type=text], select { width:100%; padding:12px 14px; font:inherit; font-size:16px; border:3px solid #e3e6ef; border-radius:14px; outline:none; background:#fff; color:var(--ink); }
+  input[type=text]:focus, select:focus { border-color:var(--accent); }
+  .swatches { display:flex; gap:8px; flex-wrap:wrap; }
+  .swatch { width:38px; height:38px; border-radius:12px; border:3px solid transparent; cursor:pointer; box-shadow:inset 0 -4px 0 rgba(0,0,0,.15); }
+  .swatch.sel { border-color:var(--ink); transform:scale(1.08); }
+  .btn { margin-top:22px; width:100%; padding:14px; font:inherit; font-size:20px; font-weight:900; color:#fff; background:var(--accent); border:none; border-radius:16px; cursor:pointer; box-shadow:0 6px 0 #d96a22; }
+  .btn:active { transform:translateY(4px); box-shadow:0 2px 0 #d96a22; }
+
+  /* HUD */
+  #hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
+  #roomName { position:absolute; top:14px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,.92); padding:8px 18px; border-radius:999px; font-weight:900; font-size:18px; box-shadow:0 4px 0 rgba(0,0,0,.1); white-space:nowrap; }
+  #crosshair { position:absolute; top:50%; left:50%; width:8px; height:8px; margin:-4px 0 0 -4px; border-radius:50%; background:#fff; box-shadow:0 0 0 2px rgba(0,0,0,.35); }
+  #hint { position:absolute; bottom:14px; right:14px; background:rgba(0,0,0,.45); color:#fff; padding:8px 12px; border-radius:12px; font-size:13px; font-weight:700; max-width:calc(100% - 28px); }
+
+  /* Click-to-play card */
+  #pause { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:15; cursor:pointer; text-align:center; }
+  #pause .card { padding:20px 26px; max-width:340px; }
+  #pause b { font-size:22px; font-weight:900; display:block; margin-bottom:6px; }
+  #pause p { margin:4px 0; color:var(--muted); font-weight:700; font-size:14px; }
+
+  /* Chat */
+  #chat { position:fixed; left:14px; bottom:14px; width:min(420px, calc(100% - 28px)); z-index:20; display:flex; flex-direction:column; gap:8px; }
+  #chatLog { max-height:38vh; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:4px; }
+  .msg { background:rgba(255,255,255,.9); border-radius:14px; padding:8px 12px; font-weight:600; font-size:15px; line-height:1.35; box-shadow:0 3px 0 rgba(0,0,0,.08); word-wrap:break-word; }
+  .msg .who { font-weight:900; margin-right:6px; }
+  .msg.system { background:rgba(43,45,66,.82); color:#fff; font-size:14px; }
+  .msg .tr { margin-left:6px; font:inherit; font-size:12px; font-weight:800; color:var(--accent); background:#fff3e8; border:none; border-radius:999px; padding:2px 9px; cursor:pointer; vertical-align:middle; }
+  .msg .tr:hover { background:#ffe2c9; }
+  .msg .trans { margin-top:4px; padding-top:4px; border-top:2px dashed #e3e6ef; color:#3d6fd8; font-style:italic; }
+  #chatInput { display:none; width:100%; padding:12px 14px; font:inherit; font-size:16px; border:3px solid var(--accent); border-radius:14px; outline:none; background:#fff; color:var(--ink); }
+  #chat.open #chatInput { display:block; }
+</style>
+</head>
+<body>
+<div id="game"></div>
+
+<div id="start">
+  <div class="card">
+    <h1>Lingo<span>Lobby</span></h1>
+    <p class="tag">Hang out. Make friends. Learn languages.</p>
+    <label for="nameInput">Your name</label>
+    <input id="nameInput" type="text" maxlength="16" placeholder="e.g. Alex" autocomplete="off">
+    <label>Pick your color</label>
+    <div class="swatches" id="swatches"></div>
+    <label for="langSelect">I speak (for translations)</label>
+    <select id="langSelect">
+      <option value="en">English</option>
+      <option value="fr">Français</option>
+      <option value="it">Italiano</option>
+      <option value="de">Deutsch</option>
+      <option value="es">Español</option>
+    </select>
+    <button class="btn" id="playBtn">Play!</button>
+  </div>
+</div>
+
+<div id="hud" hidden>
+  <div id="roomName">Lobby</div>
+  <div id="crosshair"></div>
+  <div id="hint">WASD move · Mouse look · Space jump · Enter chat · Esc free mouse</div>
+</div>
+
+<div id="pause" hidden>
+  <div class="card">
+    <b>Click to play</b>
+    <p>Your mouse is free, so you can click "Translate" on chat messages.</p>
+  </div>
+</div>
+
+<div id="chat" hidden>
+  <div id="chatLog"></div>
+  <input id="chatInput" type="text" maxlength="200" placeholder="Say something... (Enter to send, Esc to cancel)" autocomplete="off">
+</div>
+
+<script type="module" src="/game.js"></script>
+</body>
+</html>
