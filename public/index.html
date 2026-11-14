@@ -4,53 +4,62 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Polyglotter</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
 <style>
-  :root { --ink:#2b2d42; --card:#ffffff; --accent:#ff8a3d; --muted:#6b6f80; }
-  * { box-sizing: border-box; }
-  html, body { margin:0; height:100%; overflow:hidden; background:#bfe6ff; font-family:'Nunito', system-ui, sans-serif; color:var(--ink); }
+  @font-face { font-family:'Lilita One'; src:url('/fonts/lilita-one/files/lilita-one-latin-400-normal.woff2') format('woff2'); font-weight:400; font-display:block; }
+  @font-face { font-family:'Nunito'; src:url('/fonts/nunito/files/nunito-latin-600-normal.woff2') format('woff2'); font-weight:600; }
+  @font-face { font-family:'Nunito'; src:url('/fonts/nunito/files/nunito-latin-800-normal.woff2') format('woff2'); font-weight:800; }
+  @font-face { font-family:'Nunito'; src:url('/fonts/nunito/files/nunito-latin-900-normal.woff2') format('woff2'); font-weight:900; }
+
+  :root { --ink:#2a2346; --card:#fffaf2; --accent:#f39a3d; --accent-dark:#c96f1c; --muted:#7a7290; --night:#1d1a3a; --line:#eadfcd; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; overflow:hidden; background:var(--night); font-family:'Nunito', system-ui, sans-serif; color:var(--ink); }
   #game canvas { display:block; }
+  .display { font-family:'Lilita One', 'Nunito', system-ui, sans-serif; font-weight:400; }
 
   /* Start screen */
-  #start { position:fixed; inset:0; display:flex; align-items:center; justify-content:flex-start; background:linear-gradient(90deg, rgba(255,240,220,.75), rgba(255,240,220,0) 60%); z-index:30; padding:16px 16px 16px max(16px, 8vw); }
-  @media (max-width: 700px) { #start { justify-content:center; padding:16px; background:rgba(255,240,220,.6); } }
-  .card { background:var(--card); border-radius:24px; padding:28px; width:100%; max-width:400px; box-shadow:0 10px 0 rgba(0,0,0,.08), 0 20px 40px rgba(0,0,0,.12); }
-  h1 { margin:0 0 4px; font-size:40px; font-weight:900; letter-spacing:-1px; }
+  #start { position:fixed; inset:0; display:flex; align-items:center; justify-content:flex-start; z-index:30; padding:16px 16px 16px max(16px, 6vw);
+           background:linear-gradient(90deg, rgba(20,16,48,.72), rgba(20,16,48,.25) 45%, rgba(20,16,48,0) 70%); overflow-y:auto; }
+  @media (max-width: 760px) { #start { justify-content:center; padding:16px; background:rgba(20,16,48,.55); align-items:flex-start; } }
+  .card { background:var(--card); border-radius:26px; padding:26px; width:100%; max-width:440px; box-shadow:0 8px 0 rgba(0,0,0,.18), 0 24px 60px rgba(0,0,0,.35); border:3px solid #fff; }
+  h1 { margin:0; font-size:46px; line-height:1; color:var(--ink); letter-spacing:.5px; }
   h1 span { color:var(--accent); }
-  .tag { margin:0 0 20px; color:var(--muted); font-weight:600; }
-  label { display:block; font-weight:800; margin:14px 0 6px; font-size:14px; }
-  input[type=text], select { width:100%; padding:12px 14px; font:inherit; font-size:16px; border:3px solid #e3e6ef; border-radius:14px; outline:none; background:#fff; color:var(--ink); }
+  .tag { margin:6px 0 16px; color:var(--muted); font-weight:800; }
+  label { display:block; font-weight:900; margin:14px 0 8px; font-size:14px; letter-spacing:.3px; text-transform:uppercase; color:var(--muted); }
+  input[type=text], select { width:100%; padding:12px 14px; font:inherit; font-weight:800; font-size:16px; border:3px solid var(--line); border-radius:14px; outline:none; background:#fff; color:var(--ink); }
   input[type=text]:focus, select:focus { border-color:var(--accent); }
-  .swatches { display:flex; gap:8px; flex-wrap:wrap; }
-  .swatch { width:38px; height:38px; border-radius:12px; border:3px solid transparent; cursor:pointer; box-shadow:inset 0 -4px 0 rgba(0,0,0,.15); }
-  .swatch.sel { border-color:var(--ink); transform:scale(1.08); }
-  .btn { margin-top:22px; width:100%; padding:14px; font:inherit; font-size:20px; font-weight:900; color:#fff; background:var(--accent); border:none; border-radius:16px; cursor:pointer; box-shadow:0 6px 0 #d96a22; }
-  .btn:active { transform:translateY(4px); box-shadow:0 2px 0 #d96a22; }
+  .chars { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+  .char { border:3px solid var(--line); background:#fff; border-radius:16px; padding:4px 4px 6px; cursor:pointer; text-align:center; font:inherit; color:var(--ink); transition:transform .1s; }
+  .char:hover { transform:translateY(-2px); }
+  .char.sel { border-color:var(--accent); background:#fff1e0; box-shadow:0 4px 0 var(--accent-dark); }
+  .char img { width:100%; aspect-ratio:1; display:block; border-radius:12px; background:linear-gradient(#e9e4ff, #fff3e3); }
+  .char span { display:block; font-family:'Lilita One', sans-serif; font-size:14px; margin-top:4px; }
+  .btn { margin-top:20px; width:100%; padding:14px; font-family:'Lilita One', sans-serif; font-size:24px; letter-spacing:.5px; color:#fff; background:var(--accent); border:none; border-radius:16px; cursor:pointer; box-shadow:0 6px 0 var(--accent-dark); }
+  .btn:active { transform:translateY(4px); box-shadow:0 2px 0 var(--accent-dark); }
 
   /* HUD */
   #hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
-  #roomName { position:absolute; top:14px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,.92); padding:8px 18px; border-radius:999px; font-weight:900; font-size:18px; box-shadow:0 4px 0 rgba(0,0,0,.1); white-space:nowrap; }
+  #roomName { position:absolute; top:14px; left:50%; transform:translateX(-50%); background:rgba(255,250,242,.94); padding:7px 20px; border-radius:999px; font-family:'Lilita One', sans-serif; font-size:20px; box-shadow:0 4px 0 rgba(0,0,0,.2); white-space:nowrap; }
   #crosshair { position:absolute; top:50%; left:50%; width:8px; height:8px; margin:-4px 0 0 -4px; border-radius:50%; background:#fff; box-shadow:0 0 0 2px rgba(0,0,0,.35); }
-  #prompt { position:absolute; top:calc(50% + 34px); left:50%; transform:translateX(-50%); background:rgba(255,255,255,.95); padding:8px 16px; border-radius:999px; font-weight:900; font-size:16px; box-shadow:0 4px 0 rgba(0,0,0,.12); white-space:nowrap; }
-  #hint { position:absolute; bottom:14px; right:14px; background:rgba(0,0,0,.45); color:#fff; padding:8px 12px; border-radius:12px; font-size:13px; font-weight:700; max-width:calc(100% - 28px); }
+  #prompt { position:absolute; top:calc(50% + 34px); left:50%; transform:translateX(-50%); background:rgba(255,250,242,.96); padding:8px 16px; border-radius:999px; font-weight:900; font-size:16px; box-shadow:0 4px 0 rgba(0,0,0,.2); white-space:nowrap; }
+  #hint { position:absolute; bottom:14px; right:14px; background:rgba(20,16,48,.6); color:#fff; padding:8px 12px; border-radius:12px; font-size:13px; font-weight:800; max-width:calc(100% - 28px); }
+  @media (max-width: 760px) { #hint { display:none; } }
 
   /* Click-to-play card */
-  #pause { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:15; cursor:pointer; text-align:center; }
-  #pause .card { padding:20px 26px; max-width:340px; }
-  #pause b { font-size:22px; font-weight:900; display:block; margin-bottom:6px; }
-  #pause p { margin:4px 0; color:var(--muted); font-weight:700; font-size:14px; }
+  #pause { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:15; cursor:pointer; text-align:center; width:min(340px, calc(100% - 32px)); }
+  #pause .card { padding:20px 26px; }
+  #pause b { font-family:'Lilita One', sans-serif; font-weight:400; font-size:26px; display:block; margin-bottom:6px; }
+  #pause p { margin:4px 0; color:var(--muted); font-weight:800; font-size:14px; }
 
   /* Chat */
   #chat { position:fixed; left:14px; bottom:14px; width:min(420px, calc(100% - 28px)); z-index:20; display:flex; flex-direction:column; gap:8px; }
   #chatLog { max-height:38vh; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:4px; }
-  .msg { background:rgba(255,255,255,.9); border-radius:14px; padding:8px 12px; font-weight:600; font-size:15px; line-height:1.35; box-shadow:0 3px 0 rgba(0,0,0,.08); word-wrap:break-word; }
-  .msg .who { font-weight:900; margin-right:6px; }
-  .msg.system { background:rgba(43,45,66,.82); color:#fff; font-size:14px; }
-  .msg .tr { margin-left:6px; font:inherit; font-size:12px; font-weight:800; color:var(--accent); background:#fff3e8; border:none; border-radius:999px; padding:2px 9px; cursor:pointer; vertical-align:middle; }
-  .msg .tr:hover { background:#ffe2c9; }
-  .msg .trans { margin-top:4px; padding-top:4px; border-top:2px dashed #e3e6ef; color:#3d6fd8; font-style:italic; }
-  #chatInput { display:none; width:100%; padding:12px 14px; font:inherit; font-size:16px; border:3px solid var(--accent); border-radius:14px; outline:none; background:#fff; color:var(--ink); }
+  .msg { background:rgba(255,250,242,.93); border-radius:14px; padding:8px 12px; font-weight:700; font-size:15px; line-height:1.35; box-shadow:0 3px 0 rgba(0,0,0,.15); overflow-wrap:anywhere; }
+  .msg .who { font-family:'Lilita One', sans-serif; font-weight:400; margin-right:6px; }
+  .msg.system { background:rgba(42,35,70,.85); color:#fff; font-size:14px; }
+  .msg .tr { margin-left:6px; font:inherit; font-size:12px; font-weight:900; color:var(--accent-dark); background:#ffecd6; border:none; border-radius:999px; padding:2px 9px; cursor:pointer; vertical-align:middle; }
+  .msg .tr:hover { background:#ffdcb6; }
+  .msg .trans { margin-top:4px; padding-top:4px; border-top:2px dashed var(--line); color:#4b5fd1; font-style:italic; }
+  #chatInput { display:none; width:100%; padding:12px 14px; font:inherit; font-weight:700; font-size:16px; border:3px solid var(--accent); border-radius:14px; outline:none; background:#fff; color:var(--ink); }
   #chat.open #chatInput { display:block; }
 </style>
 </head>
@@ -59,12 +68,12 @@
 
 <div id="start">
   <div class="card">
-    <h1>Poly<span>glotter</span></h1>
+    <h1 class="display">Poly<span>glotter</span></h1>
     <p class="tag">Hang out. Make friends. Learn languages.</p>
     <label for="nameInput">Your name</label>
     <input id="nameInput" type="text" maxlength="16" placeholder="e.g. Alex" autocomplete="off">
-    <label>Pick your scarf color</label>
-    <div class="swatches" id="swatches"></div>
+    <label>Choose your character</label>
+    <div class="chars" id="chars"></div>
     <label for="langSelect">I speak (for translations)</label>
     <select id="langSelect">
       <option value="en">English</option>

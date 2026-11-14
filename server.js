@@ -10,12 +10,14 @@ const { WebSocketServer } = require('ws');
 
 const PORT = process.env.PORT || 3000;
 const ROOMS = ['lobby', 'french', 'english', 'italian', 'german', 'spanish', 'portuguese'];
-const BOARDS = { lobby: ['left', 'right'] };
+const BOARDS = { lobby: ['map'] };
+const CHARACTERS = ['travelerGirl', 'travelerBoy', 'artistGirl', 'artistBoy', 'skaterGirl', 'skaterBoy'];
 const MAX_STROKES = 6000;
 // saved whiteboard drawings: boards[room][board] = [[x1,y1,x2,y2,color], ...]
 const boards = {};
 for (const [room, names] of Object.entries(BOARDS)) boards[room] = Object.fromEntries(names.map((n) => [n, []]));
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const FONTS_DIR = path.join(__dirname, 'node_modules', '@fontsource');
 const ADDONS_DIR = path.join(__dirname, 'node_modules', 'three', 'examples', 'jsm');
 const THREE_FILE = path.join(__dirname, 'node_modules', 'three', 'build', 'three.module.js');
 
@@ -26,6 +28,7 @@ const TYPES = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.svg': 'image/svg+xml',
+  '.woff2': 'font/woff2',
 };
 
 // ---------- Web server (sends the game files) ----------
@@ -35,6 +38,9 @@ const server = http.createServer((req, res) => {
   let file;
   if (url === '/three.module.js') {
     file = THREE_FILE;
+  } else if (url.startsWith('/fonts/')) {
+    file = path.join(FONTS_DIR, path.normalize(url.slice(7)));
+    if (!file.startsWith(FONTS_DIR)) { res.writeHead(403); return res.end(); }
   } else if (url.startsWith('/addons/')) {
     file = path.join(ADDONS_DIR, path.normalize(url.slice(8)));
     if (!file.startsWith(ADDONS_DIR)) { res.writeHead(403); return res.end(); }
@@ -57,7 +63,7 @@ let nextId = 1;
 
 const clean = (s, max) => String(s ?? '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, max);
 const num = (v) => (Number.isFinite(v) ? Math.max(-100, Math.min(100, v)) : 0);
-const pub = (p) => ({ id: p.id, name: p.name, color: p.color, x: p.x, y: p.y, z: p.z, ry: p.ry, s: p.s });
+const pub = (p) => ({ id: p.id, name: p.name, color: p.color, char: p.char, x: p.x, y: p.y, z: p.z, ry: p.ry, s: p.s });
 const unit = (v) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0);
 
 function send(ws, msg) {
@@ -79,7 +85,7 @@ function roomCounts() {
 }
 
 wss.on('connection', (ws) => {
-  const p = { id: nextId++, ws, name: 'Guest', color: '#4aa3ff', room: 'lobby', x: 0, y: 0, z: 0, ry: 0, s: 0, joined: false };
+  const p = { id: nextId++, ws, name: 'Guest', color: '#4aa3ff', char: 'travelerGirl', room: 'lobby', x: 0, y: 0, z: 0, ry: 0, s: 0, joined: false };
   players.set(p.id, p);
 
   ws.on('message', (raw) => {
@@ -90,6 +96,7 @@ wss.on('connection', (ws) => {
         if (p.joined) return;
         p.name = clean(m.name, 16) || 'Guest';
         p.color = /^#[0-9a-f]{6}$/i.test(m.color) ? m.color : '#4aa3ff';
+        p.char = CHARACTERS.includes(m.char) ? m.char : 'travelerGirl';
         p.joined = true;
         send(ws, { type: 'roomState', you: p.id, room: p.room, players: roomPlayers(p.room, p.id), counts: roomCounts(), boards: boards[p.room] || {} });
         broadcastRoom(p.room, { type: 'playerJoined', player: pub(p) }, p.id);
